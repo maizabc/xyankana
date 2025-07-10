@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Shop XYAN KANA - Trang chủ</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; }
+    .card { margin-bottom: 20px; }
+    .price { font-weight: bold; color: #e74c3c; }
+    .form-container { max-width: 400px; margin: auto; }
+  </style>
+</head>
+<body>
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>XYAN KANA</h1>
+    <div>
+      <a href="index.html" class="btn btn-outline-dark me-2">Trang chủ</a>
+      <a href="thongtin.html" class="btn btn-outline-info me-2">Thông tin</a>
+      <a href="naptien.html" class="btn btn-outline-warning ms-2">Nạp tiền</a>
+      <a href="login.html" id="loginBtn" class="btn btn-outline-primary">Đăng nhập</a>
+      <a href="register.html" id="registerBtn" class="btn btn-outline-success ms-2">Đăng ký</a>
+      <span id="balanceDisplay" class="me-3 fw-bold text-success"></span>
+    </div>
+  </div>
+
+  <div class="row" id="account-list"></div>
+</div>
+
+<script>
+let currentUser = localStorage.getItem("user") || null;
+let userBalance = parseInt(localStorage.getItem("balance_" + currentUser)) || 0;
+
+const accData = [
+  {
+    id: 1,
+    name: "ACC Lv5 Gói 5 tài khoản",
+    price: 0,
+    img: "https://i.imgur.com/W0ytp6p.jpeg",
+    rank: "Không rõ",
+    available: [
+      { username: "acc1@gmail.com", password: "pass1" },
+      { username: "acc2@gmail.com", password: "pass2" },
+      { username: "acc3@gmail.com", password: "pass3" },
+      { username: "acc4@gmail.com", password: "pass4" },
+      { username: "acc5@gmail.com", password: "pass5" }
+    ]
+  },
+  {
+    id: 2,
+    name: "AimBot #2 (Phần mềm)",
+    price: 400000,
+    img: "https://i.imgur.com/59j7rmb.jpeg",
+    rank: "Không rõ",
+    available: ["abc123", "def456", "key001"]
+  }
+];
+
+// Lưu tổng số acc đã bán
+let soldMap = JSON.parse(localStorage.getItem("soldMap") || "{}");
+
+function updateBalanceDisplay() {
+  userBalance = parseInt(localStorage.getItem("balance_" + currentUser)) || 0;
+  document.getElementById("balanceDisplay").innerText = `Số dư: ${userBalance.toLocaleString()}đ`;
+}
+
+function getAvailable(acc) {
+  const sold = soldMap[acc.id] || 0;
+  return acc.available.slice(sold);
+}
+
+function renderAccounts() {
+  const list = document.getElementById('account-list');
+  list.innerHTML = '';
+  const userPurchased = JSON.parse(localStorage.getItem("purchased_" + currentUser) || "[]");
+
+  accData.forEach((acc, index) => {
+    const card = document.createElement('div');
+    card.className = 'col-md-4';
+
+    const available = getAvailable(acc);
+    const isSoldOut = available.length === 0;
+    const ownedCount = userPurchased.filter(p => p.id === acc.id).length;
+
+    let content = `
+      <h5 class="card-title">${acc.name}</h5>
+      <p class="card-text">Rank: ${acc.rank}</p>
+      <p class="price">${acc.price.toLocaleString()}đ</p>
+      <p><strong>Đã mua:</strong> ${ownedCount} | <strong>Còn lại:</strong> ${available.length}</p>
+    `;
+
+    if (!isSoldOut) {
+      content += `
+        <input id="qty_${acc.id}" type="number" min="1" max="${available.length}" value="1" class="form-control mb-2">
+        <button class="btn btn-success w-100" onclick="buyAcc(${index})">Mua ACC</button>
+      `;
+    } else {
+      content += `<div class="alert alert-secondary text-center">❌ ĐÃ HẾT HÀNG</div>`;
+    }
+
+    card.innerHTML = `<div class="card shadow-sm">
+      <img src="${acc.img}" class="card-img-top" alt="${acc.name}">
+      <div class="card-body">${content}</div>
+    </div>`;
+    list.appendChild(card);
+  });
+}
+
+function buyAcc(index) {
+  if (!currentUser) {
+    alert("Vui lòng đăng nhập trước khi mua!");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const acc = accData[index];
+  const available = getAvailable(acc);
+  const userKey = "purchased_" + currentUser;
+  const userPurchased = JSON.parse(localStorage.getItem(userKey) || "[]");
+
+  const qtyInput = document.getElementById(`qty_${acc.id}`);
+  const quantity = Math.max(1, parseInt(qtyInput?.value || "1"));
+
+  if (quantity > available.length) {
+    alert(`❌ Chỉ còn ${available.length} acc/key để mua.`);
+    return;
+  }
+
+  const total = acc.price * quantity;
+  if (userBalance < total) {
+    alert(`❌ Không đủ tiền. Cần ${total.toLocaleString()}đ`);
+    return;
+  }
+
+  userBalance -= total;
+  localStorage.setItem("balance_" + currentUser, userBalance);
+
+  const claimed = available.slice(0, quantity);
+  soldMap[acc.id] = (soldMap[acc.id] || 0) + quantity;
+  localStorage.setItem("soldMap", JSON.stringify(soldMap));
+
+  let message = "✅ Mua thành công:\n";
+  claimed.forEach((claim, i) => {
+    const billId = `${acc.id}-${Date.now()}-${i}`;
+    let item;
+    if (typeof claim === 'object') {
+      item = { id: acc.id, name: acc.name, username: claim.username, password: claim.password, bill: billId };
+      message += `➡️ ${claim.username} / ${claim.password} | Bill: ${billId}\n`;
+    } else {
+      item = { id: acc.id, name: acc.name, key: claim, bill: billId };
+      message += `➡️ Key: ${claim} | Bill: ${billId}\n`;
+    }
+    userPurchased.push(item);
+  });
+
+  localStorage.setItem(userKey, JSON.stringify(userPurchased));
+  alert(message);
+  updateBalanceDisplay();
+  renderAccounts();
+}
+
+// Nạp tiền xử lý
+const urlParams = new URLSearchParams(window.location.search);
+const success = urlParams.get("success");
+const amount = parseInt(urlParams.get("amount") || "0");
+if (success === "1" && amount > 0) {
+  userBalance += amount;
+  localStorage.setItem("balance_" + currentUser, userBalance);
+  alert(`🎉 Nạp thành công ${amount.toLocaleString()}đ!`);
+}
+
+// Ẩn đăng nhập nếu đã login
+if (currentUser) {
+  document.getElementById("loginBtn")?.style.setProperty("display", "none");
+  document.getElementById("registerBtn")?.style.setProperty("display", "none");
+}
+
+renderAccounts();
+updateBalanceDisplay();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

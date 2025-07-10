@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Khôi phục mật khẩu</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container py-5">
+  <h3 class="mb-4">🔐 Khôi phục mật khẩu</h3>
+  <input type="text" id="username" class="form-control mb-3" placeholder="Tên tài khoản">
+  <input type="email" id="email" class="form-control mb-3" placeholder="Gmail đã đăng ký">
+  <button onclick="sendOtp()" class="btn btn-info mb-3">Gửi mã xác nhận</button>
+
+  <div id="verifySection" style="display: none;">
+    <input type="text" id="otp" class="form-control mb-2" placeholder="Nhập mã xác nhận">
+    <input type="password" id="newPass" class="form-control mb-2" placeholder="Mật khẩu mới">
+    <button onclick="resetPassword()" class="btn btn-success">Đặt lại mật khẩu</button>
+  </div>
+</div>
+
+<script>
+let users = JSON.parse(localStorage.getItem("users") || "{}");
+let otpCode = "";
+
+function sendOtp() {
+  const user = document.getElementById("username").value.trim();
+  const email = document.getElementById("email").value.trim();
+
+  if (!users[user] || users[user].email !== email) {
+    alert("❌ Tên tài khoản hoặc Gmail không khớp!");
+    return;
+  }
+
+  otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  alert(`✅ Mã xác nhận đã gửi (demo): ${otpCode}`);
+  document.getElementById("verifySection").style.display = "block";
+}
+
+function resetPassword() {
+  const otp = document.getElementById("otp").value.trim();
+  const newPass = document.getElementById("newPass").value;
+  const user = document.getElementById("username").value.trim();
+
+  if (otp !== otpCode) {
+    alert("❌ Mã xác nhận không đúng!");
+    return;
+  }
+
+  if (!newPass) {
+    alert("⚠️ Nhập mật khẩu mới!");
+    return;
+  }
+
+  users[user].password = newPass;
+  localStorage.setItem("users", JSON.stringify(users));
+  alert("✅ Đổi mật khẩu thành công! Bạn có thể đăng nhập lại.");
+  window.location.href = "login.html";
+}
+</script>
+</body>
+</html>

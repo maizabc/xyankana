@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Thông tin tài khoản</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container py-5">
+  <h2 class="mb-4">Thông tin tài khoản</h2>
+
+  <!-- Navigation -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <a href="index.html" class="btn btn-outline-dark me-2">Trang chủ</a>
+      <a href="thongtin.html" class="btn btn-outline-info me-2">Thông tin</a>
+      <a href="naptien.html" class="btn btn-outline-warning ms-2">Nạp tiền</a>
+      <a href="login.html" id="loginBtn" class="btn btn-outline-primary">Đăng nhập</a>
+      <a href="register.html" id="registerBtn" class="btn btn-outline-success ms-2">Đăng ký</a>
+      <span id="balanceDisplay" class="ms-3 fw-bold text-success"></span>
+    </div>
+  </div>
+
+  <!-- Tài khoản -->
+  <p><strong>Tài khoản đăng nhập:</strong> <span id="username" class="text-primary fw-bold"></span></p>
+
+  <!-- Đổi mật khẩu -->
+  <div class="mb-4">
+    <h5>Đổi mật khẩu</h5>
+    <input type="password" id="newPass" class="form-control" placeholder="Nhập mật khẩu mới">
+    <button onclick="changePassword()" class="btn btn-warning mt-2">Lưu mật khẩu</button>
+  </div>
+
+  <!-- ACC đã mua -->
+  <div>
+    <h5 class="mb-2">Tài khoản game đã mua:</h5>
+    <ul id="purchasedList" class="list-group"></ul>
+  </div>
+
+  <!-- Nút đăng xuất -->
+  <div class="text-center mt-4">
+    <button class="btn btn-outline-danger" onclick="logout()">🔓 Đăng xuất</button>
+  </div>
+</div>
+
+<!-- Script -->
+<script>
+  const username = localStorage.getItem("user");
+  const balance = parseInt(localStorage.getItem("balance") || "0");
+
+  // Kiểm tra đăng nhập
+  if (!username) {
+    alert("Vui lòng đăng nhập!");
+    window.location.href = "login.html";
+  }
+
+  // Hiển thị tên người dùng và số dư
+  document.getElementById("username").innerText = username || "Chưa đăng nhập";
+  document.getElementById("balanceDisplay").innerText = username ? `Số dư: ${balance.toLocaleString()}đ` : "";
+
+  // Ẩn đăng nhập / đăng ký nếu đã đăng nhập
+  if (username) {
+    const loginBtn = document.getElementById("loginBtn");
+    const registerBtn = document.getElementById("registerBtn");
+    if (loginBtn) loginBtn.style.display = "none";
+    if (registerBtn) registerBtn.style.display = "none";
+  }
+
+  // Đổi mật khẩu riêng cho user
+  function changePassword() {
+    const newPass = document.getElementById("newPass").value;
+    if (!newPass) return alert("Vui lòng nhập mật khẩu mới!");
+    localStorage.setItem("pass_" + username, newPass);
+    alert("✅ Đổi mật khẩu thành công!");
+  }
+
+  // Hiển thị danh sách acc đã mua của user hiện tại
+  const purchased = JSON.parse(localStorage.getItem("purchased_" + username) || "[]");
+  const list = document.getElementById("purchasedList");
+
+  if (purchased.length === 0) {
+    list.innerHTML = "<li class='list-group-item'>Bạn chưa mua tài khoản nào.</li>";
+  } else {
+    purchased.forEach(acc => {
+      const li = document.createElement("li");
+      li.className = "list-group-item";
+      li.innerText = `${acc.name} | Tài khoản: ${acc.username} | Mật khẩu: ${acc.password}`;
+      list.appendChild(li);
+    });
+  }
+
+  // Đăng xuất
+  function logout() {
+    localStorage.removeItem("user");
+    alert("👋 Bạn đã đăng xuất!");
+    window.location.href = "index.html";
+  }
+</script>
+</body>
+</html>
